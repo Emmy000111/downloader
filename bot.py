@@ -1,4 +1,24 @@
-l
+import os
+import logging
+import sqlite3
+from telegram import Update, InputFile
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    MessageHandler,
+    filters,
+    ContextTypes,
+)
+from yt_dlp import YoutubeDL
+
+# --- Config ---
+ADMIN_ID = 1421439076  # Replace with your Telegram user ID
+
+# Setup logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 logger = logging.getLogger(__name__)
 
 # yt-dlp options
