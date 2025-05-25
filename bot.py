@@ -38,8 +38,8 @@ conn = sqlite3.connect('users.db', check_same_thread=False)
 cursor = conn.cursor()
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (
-        user_id INTEGER PRIMARY KEY, 
-        username TEXT, 
+        user_id INTEGER PRIMARY KEY,
+        username TEXT,
         blocked INTEGER DEFAULT 0
     )
 ''')
@@ -125,7 +125,6 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cursor.execute('SELECT blocked FROM users WHERE user_id=?', (user_id,))
     res = cursor.fetchone()
     if res and res[0] == 1:
-        # Blocked user: ignore silently or send notice
         await update.message.reply_text("You are blocked from using this bot.")
         return
 
