@@ -14,14 +14,14 @@ from yt_dlp import YoutubeDL
 # --- Config ---
 ADMIN_ID = 1421439076  # Replace with your Telegram user ID
 
-# Logging setup
+# Setup logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-# YTDLP options
+# yt-dlp options
 YDL_OPTS = {
     'format': 'mp4',
     'outtmpl': 'downloads/%(id)s.%(ext)s',
@@ -33,7 +33,7 @@ YDL_OPTS = {
 if not os.path.exists('downloads'):
     os.makedirs('downloads')
 
-# SQLite DB setup
+# Setup SQLite DB
 conn = sqlite3.connect('users.db', check_same_thread=False)
 cursor = conn.cursor()
 cursor.execute('''
@@ -46,6 +46,12 @@ cursor.execute('''
 conn.commit()
 
 # --- Handlers ---
+
+# Log all incoming updates (for debugging)
+async def log_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    msg_text = update.message.text if update.message else "No message text"
+    logger.info(f"Update from user_id={user.id if user else 'None'}, username={user.username if user else 'None'}: {msg_text}")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -144,6 +150,18 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Error downloading video: {e}")
         await update.message.reply_text("Sorry, I couldn't download the video. Please check the link and try again.")
 
+# Minimal test admin command
+async def test_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        await update.message.reply_text("Unauthorized")
+        return
+    await update.message.reply_text("Admin access confirmed!")
+
+# Bot info command to confirm token and username
+async def bot_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    me = await context.bot.get_me()
+    await update.message.reply_text(f"Bot username: @{me.username}\nBot ID: {me.id}")
+
 # --- Main ---
 
 def main():
@@ -154,15 +172,23 @@ def main():
 
     app = ApplicationBuilder().token(TOKEN).build()
 
+    # Logging all updates for debugging
+    app.add_handler(MessageHandler(filters.ALL, log_update), group=0)
+
+    # Admin commands
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("users", users))
     app.add_handler(CommandHandler("block", block))
     app.add_handler(CommandHandler("unblock", unblock))
     app.add_handler(CommandHandler("stats", stats))
+    app.add_handler(CommandHandler("testadmin", test_admin))
+    app.add_handler(CommandHandler("botinfo", bot_info))
+
+    # Video download handler
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), download_video))
 
     print("Bot is running...")
     app.run_polling()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
